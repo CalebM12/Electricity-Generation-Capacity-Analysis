@@ -2,10 +2,56 @@
 
 ## Overview
 
-This project explores how to profile, standardize, and validate Canadian electricity generation and capacity data. It uses two CSV datasets and aims to convert them into a consistent structure that is easier to validate and use for downstream analysis.
+This project profiles, standardizes, and validates Canadian electricity generation and capacity data. A Python/pandas pipeline combines the source CSVs into a consistent structure, separates accepted and rejected records, and produces a row-count reconciliation report. The accepted data can be loaded into SQLite and queried for validation and summaries.
 
-The project is designed to demonstrate data-conversion practices relevant to utility data work, including source-data profiling, transformation, data-quality handling, and reconciliation. It is a portfolio demonstration using electricity metrics—not a utility billing or customer-data migration.
+This is a portfolio demonstration using electricity metrics
 
+## How to Run
+
+Run commands from the repository root.
+
+### Convert and validate the source data
+
+```bash
+python src/convert.py
+```
+
+This creates:
+
+- `output/combined_unclean_electricity.csv` — combined records before validation
+- `output/accepted_records.csv` — records that pass validation
+- `output/rejected_records.csv` — rejected records with reasons
+- `output/reconciliation.json` — row counts, rejection reasons, and duplicate-key results
+
+### Create the SQLite database
+
+```bash
+python src/sqlite_setup.py
+```
+
+This loads `output/accepted_records.csv` into `output/electricity_metrics.db`.
+
+### Run the SQL examples
+
+```bash
+python src/sql_query.py
+```
+
+Run the database setup first.
+
+### Run the tests
+
+```bash
+python -m pytest
+```
+
+### Open the notebook
+
+```bash
+jupyter notebook
+```
+
+The notebook contains source-data profiling, visual exploration, and SQL queries against the SQLite database.
 
 ## Data
 
@@ -15,35 +61,29 @@ The repository includes:
 |---|---|
 | `data-files/electricity-generation-dataset.csv` | Electricity generation by region, source, and year. Values use `GW.h`. |
 | `data-files/electricity-capacity-dataset.csv` | Electricity capacity by region, source, and year. Values use `MW`. |
-| `data-files/electricity-capacity-guide.csv` | Guide describing fields or values in the capacity data. |
+| `data-files/electricity-capacity-guide.csv` | Reference guide for capacity data fields and values. |
 
-The generation dataset contains 1,344 rows and covers 2005–2016. The capacity dataset contains 2,688 rows, including blank data that will be profiled and handled according to documented rules.
+The generation dataset contains 1,344 records covering 2005–2016. The capacity dataset contains 2,688 rows, including 1,344 entirely blank rows. The pipeline rejects those blank rows and records the reason.
 
-The datasets contain fields such as region, energy source, year, value, and unit. Generation and capacity are different measures and their units are preserved separately.
+The datasets include region, energy source, year, value, and unit fields. Generation and capacity are different measures, and their units are preserved separately.
 
- [https://open.canada.ca/data/en/dataset/2cdf43fc-d4aa-4604-9f21-29777d955810](Open Canada dataset, Electricity generation and capacity in Canada)
-
-
+[Open Canada: Electricity generation and capacity in Canada](https://open.canada.ca/data/en/dataset/2cdf43fc-d4aa-4604-9f21-29777d955810)
 
 ## Target Structure
 
-The planned standardized output will include fields such as:
+Both datasets are converted into the following standardized structure:
 
 | Field | Description | Example |
 |---|---|---|
-| `measure_type` | Identifies generation or capacity | `generation` |
-| `region` | Region from the source data | `Canada` |
+| `measure_type` | Measurement type derived from the input file | `generation` |
+| `region` | Region code or national aggregate | `Canada` |
 | `source` | Electricity source | `Hydro` |
 | `year` | Reporting year | `2005` |
-| `value` | Numeric measure | `358386.9629` |
-| `unit` | Unit from the source | `GW.h` |
-| `source_file` | Original input file | `electricity-generation-dataset.csv` |
-| `source_row` | Original row number for traceability | `2` |
+| `value` | Numeric capacity or generation value | `358386.9629` |
+| `unit` | Unit from the source dataset | `GW.h` |
+| `source_file` | Original input filename | `electricity-generation-dataset.csv` |
 
-The exact target schema and mapping rules will be documented before they are implemented.
-
-
-
+The pipeline validates required fields, years, values, supported regions and sources, units, and duplicate target keys. Invalid records are written to the rejected-records output with a reason. The reconciliation report checks row counts; it does not compare numeric totals.
 
 ## Repository Contents
 
@@ -53,5 +93,20 @@ The exact target schema and mapping rules will be documented before they are imp
 │   ├── electricity-capacity-dataset.csv
 │   ├── electricity-capacity-guide.csv
 │   └── electricity-generation-dataset.csv
+├── src/
+│   ├── convert.py
+│   ├── electricity_generation_capacity_test.py
+│   ├── sql_query.py
+│   └── sqlite_setup.py
+├── output/                 # Generated by the scripts
 ├── notebook.ipynb
 └── README.md
+```
+
+## Tools
+
+- Python
+- pandas
+- SQLite
+- Jupyter Notebook
+- pytest
