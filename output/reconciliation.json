@@ -1,0 +1,12 @@
+{
+  "input_rows": 4032,
+  "accepted_rows": 2688,
+  "rejected_rows": 1344,
+  "counts_balance": "Pass",
+  "rejected_by_reason": {
+    "all_source_fields_blank": 1344
+  },
+  "duplicate_target_key_rows": 0,
+  "duplicate_target_key_groups": 0,
+  "duplicate_target_keys": []
+}
